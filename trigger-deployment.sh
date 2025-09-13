@@ -5,8 +5,8 @@
 set -e
 
 BRANCH="${1:-dev}"
-AZURE_VM_USER="${2:-your-username}"
-AZURE_VM_IP="${3:-your-vm-ip}"
+AZURE_VM_USER="${2:-azureuser}"
+AZURE_VM_IP="${3:-4.196.108.56}"
 
 echo "🚀 Triggering deployment from GitHub to Azure VM"
 echo "Branch: $BRANCH | Target: $AZURE_VM_USER@$AZURE_VM_IP"
