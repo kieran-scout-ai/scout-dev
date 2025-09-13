@@ -1,0 +1,71 @@
+version: '3.8'
+services:
+  # Qdrant for local development
+  qdrant-dev:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6335:6333"  # Local Qdrant REST API
+      - "6336:6334"  # Local Qdrant gRPC
+    volumes:
+      - ./dev-data/qdrant_storage:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+      - QDRANT__SERVICE__ENABLE_CORS=true
+      - QDRANT__WEB_UI__ENABLED=true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 10s bash -c '</dev/tcp/localhost/6333'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - scout_ai_dev_network
+
+  # Open Web UI without Ollama dependency
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui-dev
+    volumes:
+      - ./dev-data/open-webui:/app/backend/data
+      - ./functions:/app/backend/functions/custom:ro
+    depends_on:
+      qdrant-dev:
+        condition: service_healthy
+    ports:
+      - "3001:8080"  # Local development port
+    environment:
+      # Qdrant configuration
+      - QDRANT_URI=http://qdrant-dev:6333
+      - VECTOR_DB=qdrant
+      - QDRANT_COLLECTION_PREFIX=scout-ai-dev
+      - ENABLE_QDRANT_MULTITENANCY_MODE=true
+
+      # External model configuration (use Azure VM or external Ollama)
+      - OLLAMA_BASE_URL=http://4.196.108.56:11434  # Your Azure VM Ollama
+
+      # Development settings
+      - WEBUI_SECRET_KEY=dev-secret-key-12345
+      - ENABLE_SIGNUP=true
+      - DEFAULT_USER_ROLE=admin
+
+      # RAG settings
+      - RAG_CHUNK_SIZE=800
+      - RAG_CHUNK_OVERLAP=200
+      - RAG_TOP_K=10
+
+      # Development flags
+      - ENV=development
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    restart: unless-stopped
+    networks:
+      - scout_ai_dev_network
+
+volumes:
+  dev-data:
+
+networks:
+  scout_ai_dev_network:
+    driver: bridge

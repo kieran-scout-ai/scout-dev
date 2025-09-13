@@ -1,6 +1,9 @@
 x.py
 yarn.lock
 .DS_Store
+
+# Development data directories
+dev-data/
 node_modules
 /build
 /.svelte-kit
