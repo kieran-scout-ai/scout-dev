@@ -25,9 +25,19 @@ fi
 
 # Clone or pull from GitHub
 if [ -d "$DEPLOYMENT_DIR/.git" ]; then
+    # Directory is already a git repository
     cd "$DEPLOYMENT_DIR"
     git fetch origin && git checkout "$BRANCH" && git pull origin "$BRANCH"
+elif [ -d "$DEPLOYMENT_DIR" ]; then
+    # Directory exists but is not a git repository - initialize it
+    cd "$DEPLOYMENT_DIR"
+    echo "📦 Initializing git repository in existing directory..."
+    git init
+    git remote add origin "$GITHUB_REPO"
+    git fetch origin
+    git checkout -b "$BRANCH" origin/"$BRANCH"
 else
+    # Directory doesn't exist - clone it
     cd "$(dirname "$DEPLOYMENT_DIR")"
     git clone -b "$BRANCH" "$GITHUB_REPO" "$DEPLOYMENT_DIR"
     cd "$DEPLOYMENT_DIR"
