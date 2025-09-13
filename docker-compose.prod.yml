@@ -1,0 +1,65 @@
+version: '3.8'
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "127.0.0.1:6333:6333"
+      - "127.0.0.1:6334:6334"
+    volumes:
+      - ./qdrant_storage:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+      - QDRANT__SERVICE__ENABLE_CORS=true
+      - QDRANT__WEB_UI__ENABLED=true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 10s bash -c '</dev/tcp/localhost/6333'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - scout_ai_network
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    ports:
+      - "3000:8080"
+    volumes:
+      - open-webui:/app/backend/data
+      - ./functions:/app/backend/functions/custom:ro
+    environment:
+      - QDRANT_URI=http://qdrant:6333
+      - VECTOR_DB=qdrant
+      - QDRANT_COLLECTION_PREFIX=scout-ai
+      - ENABLE_QDRANT_MULTITENANCY_MODE=true
+      - OLLAMA_BASE_URL=http://localhost:11434
+      - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY:-change-this-key}
+      - ENABLE_SIGNUP=true
+      - DEFAULT_USER_ROLE=user
+      - RAG_CHUNK_SIZE=800
+      - RAG_CHUNK_OVERLAP=200
+      - RAG_TOP_K=10
+      - AZURE_COMMUNICATION_CONNECTION_STRING=${AZURE_COMMUNICATION_CONNECTION_STRING}
+      - SENDER_ADDRESS=${SENDER_ADDRESS:-donotreply@scout-ai.com.au}
+      - SENDER_NAME=${SENDER_NAME:-Scout AI}
+      - ENV=production
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - scout_ai_network
+
+volumes:
+  open-webui:
+
+networks:
+  scout_ai_network:
+    driver: bridge
