@@ -45,6 +45,7 @@ services:
       - SENDER_ADDRESS=${SENDER_ADDRESS:-donotreply@scout-ai.com.au}
       - SENDER_NAME=${SENDER_NAME:-Scout AI}
       - ENV=production
+      - WEBUI_NAME=Scout
     depends_on:
       qdrant:
         condition: service_healthy

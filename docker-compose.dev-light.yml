@@ -50,6 +50,9 @@ services:
       - ENABLE_SIGNUP=true
       - DEFAULT_USER_ROLE=admin
 
+      # Custom branding
+      - WEBUI_NAME=Scout
+
       # RAG settings
       - RAG_CHUNK_SIZE=800
       - RAG_CHUNK_OVERLAP=200
